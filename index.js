@@ -30,7 +30,10 @@ io.on('connection', (socket) => {
 
     socket.on("join-master", (roomId) => {
         // 클라이언트가 방(Room)에 조인하려고 할 때, 클라이언트 수를 확인하고 제한합니다.
-        if (roomMasterCounts[roomId] === undefined || roomMasterCounts[roomId] < maxClientsPerMasterRoom) {
+        if(roomMasterCounts[roomId] === undefined ){
+            roomMasterCounts[roomId] = 1;
+        }
+        else if (roomMasterCounts[roomId] < maxClientsPerMasterRoom) {
             roomMasterCounts[roomId]++;
             socket.join(roomId);
             console.log("Master joined in a room : " + roomId + " count:" + roomMasterCounts[roomId]);
@@ -51,9 +54,14 @@ io.on('connection', (socket) => {
     })
 
     socket.on("join-slave", (roomId) => {
+        if (roomSlaveCounts[roomId] === undefined) {
+            roomSlaveCounts[roomId] = 1;
+            socket.join(roomId);
+            console.log("slave User joined in a room : " + roomId + " count:" + roomSlaveCounts[roomId]);
+        } 
         
         // 클라이언트가 방(Room)에 조인하려고 할 때, 클라이언트 수를 확인하고 제한합니다.
-        if (roomSlaveCounts[roomId] === undefined || roomSlaveCounts[roomId] < maxClientsPerSlaveRoom) {
+        if (roomSlaveCounts[roomId] < maxClientsPerSlaveRoom) {
             roomSlaveCounts[roomId]++;
             socket.join(roomId);
             console.log("slave User joined in a room : " + roomId + " count:" + roomSlaveCounts[roomId]);
