@@ -21,7 +21,8 @@ var io = SocketIO(server, {
 });
 
 
-const maxClientsPerRoom = 1;
+const maxClientsPerMasterRoom = 2;
+const maxClientsPerSlaveRoom = 1;
 const roomMasterCounts = {}; // 방(Room)별 클라이언트 수를 추적하는 객체
 const roomSlaveCounts = {};
 
@@ -29,7 +30,7 @@ io.on('connection', (socket) => {
 
     socket.on("join-master", (roomId) => {
         // 클라이언트가 방(Room)에 조인하려고 할 때, 클라이언트 수를 확인하고 제한합니다.
-        if (roomMasterCounts[roomId] === undefined || roomMasterCounts[roomId] < maxClientsPerRoom) {
+        if (roomMasterCounts[roomId] === undefined || roomMasterCounts[roomId] < maxClientsPerMasterRoom) {
             roomMasterCounts[roomId] = 1;
             socket.join(roomId);
             console.log("Master joined in a room : " + roomId + " count:" + roomMasterCounts[roomId]);
@@ -52,7 +53,7 @@ io.on('connection', (socket) => {
     socket.on("join-slave", (roomId) => {
         
         // 클라이언트가 방(Room)에 조인하려고 할 때, 클라이언트 수를 확인하고 제한합니다.
-        if (roomSlaveCounts[roomId] === undefined || roomSlaveCounts[roomId] < maxClientsPerRoom) {
+        if (roomSlaveCounts[roomId] === undefined || roomSlaveCounts[roomId] < maxClientsPerSlaveRoom) {
             roomSlaveCounts[roomId] = 1;
             socket.join(roomId);
             console.log("slave User joined in a room : " + roomId + " count:" + roomSlaveCounts[roomId]);
@@ -60,7 +61,7 @@ io.on('connection', (socket) => {
         else {
             // 클라이언트 수가 제한을 초과하면 클라이언트를 방(Room)에 입장시키지 않습니다.
             socket.emit('room-full-slave', roomId);
-            console.log("Slave room full : " + roomId + " count : " + roomMasterCounts[roomId]);
+            console.log("Slave room full : " + roomId + " count : " + roomSlaveCounts[roomId]);
             return;
         }
 
