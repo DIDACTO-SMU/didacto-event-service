@@ -36,7 +36,7 @@ io.on('connection', (socket) => {
         } 
         else {
             // 클라이언트 수가 제한을 초과하면 클라이언트를 방(Room)에 입장시키지 않습니다.
-            socket.broadcast.to(roomId).emit('room-full-master', roomId);
+            socket.emit('room-full-master', roomId);
             console.log("Master room full : " + roomId + " count : " + roomMasterCounts[roomId]);
         }
 
@@ -59,7 +59,7 @@ io.on('connection', (socket) => {
         } 
         else {
             // 클라이언트 수가 제한을 초과하면 클라이언트를 방(Room)에 입장시키지 않습니다.
-            socket.broadcast.to(roomId).emit('room-full-slave', roomId);
+            socket.emit('room-full-slave', roomId);
             console.log("Slave room full : " + roomId + " count : " + roomMasterCounts[roomId]);
             return;
         }
