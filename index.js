@@ -61,7 +61,7 @@ io.on('connection', (socket) => {
         } 
         
         // 클라이언트가 방(Room)에 조인하려고 할 때, 클라이언트 수를 확인하고 제한합니다.
-        if (roomSlaveCounts[roomId] < maxClientsPerSlaveRoom) {
+        else if (roomSlaveCounts[roomId] < maxClientsPerSlaveRoom) {
             roomSlaveCounts[roomId]++;
             socket.join(roomId);
             console.log("slave User joined in a room : " + roomId + " count:" + roomSlaveCounts[roomId]);
