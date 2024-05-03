@@ -31,7 +31,7 @@ io.on('connection', (socket) => {
     socket.on("join-master", (roomId) => {
         // 클라이언트가 방(Room)에 조인하려고 할 때, 클라이언트 수를 확인하고 제한합니다.
         if (roomMasterCounts[roomId] === undefined || roomMasterCounts[roomId] < maxClientsPerMasterRoom) {
-            roomMasterCounts[roomId] = 1;
+            roomMasterCounts[roomId]++;
             socket.join(roomId);
             console.log("Master joined in a room : " + roomId + " count:" + roomMasterCounts[roomId]);
         } 
@@ -45,7 +45,7 @@ io.on('connection', (socket) => {
 
         // 클라이언트가 방(Room)을 떠날 때 클라이언트 수를 업데이트합니다.
         socket.on('disconnect', () => {
-            roomMasterCounts[roomId] = 0;
+            roomMasterCounts[roomId]--;
             console.log("master disconnect, count:" + roomMasterCounts[roomId]);
         });
     })
@@ -54,7 +54,7 @@ io.on('connection', (socket) => {
         
         // 클라이언트가 방(Room)에 조인하려고 할 때, 클라이언트 수를 확인하고 제한합니다.
         if (roomSlaveCounts[roomId] === undefined || roomSlaveCounts[roomId] < maxClientsPerSlaveRoom) {
-            roomSlaveCounts[roomId] = 1;
+            roomSlaveCounts[roomId]++;
             socket.join(roomId);
             console.log("slave User joined in a room : " + roomId + " count:" + roomSlaveCounts[roomId]);
         } 
@@ -69,7 +69,7 @@ io.on('connection', (socket) => {
 
         // 클라이언트가 방(Room)을 떠날 때 클라이언트 수를 업데이트합니다.
         socket.on('disconnect', () => {
-            roomSlaveCounts[roomId] = 0;
+            roomSlaveCounts[roomId]--;
             console.log("slave disconnect, count:" + roomSlaveCounts[roomId]);
         });
     })
