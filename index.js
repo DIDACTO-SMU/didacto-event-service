@@ -1,5 +1,6 @@
-const express = require('express');
-const SocketIO = require('socket.io');
+import express from "express";
+import { instrument } from "@socket.io/admin-ui"
+import { Server } from "socket.io"
 
 
 const app = express();
@@ -14,12 +15,15 @@ const server = app.listen(server_port, () => {
     console.log("Started on : " + server_port);
 })
 
-var io = SocketIO(server, {
+var io = new Server(server, {
     cors: {
       origin: "*"
     }
 });
 
+instrument(io, {
+    auth: false, // 실제 비밀번호를 쓰도록 바꿀 수 있음!
+});
 
 const maxClientsPerMasterRoom = 2;
 const maxClientsPerSlaveRoom = 1;
@@ -31,7 +35,9 @@ io.on('connection', (socket) => {
     socket.on("join-master", (roomId) => {
 
         socket.join(roomId);
-        console.log("Master joined in a room : " + roomId);
+        const roomCount = io.sockets.adapter.rooms.get(roomId)?.size;
+        console.log(new Date() + " Master joined in a room : " + roomId + " Count : " + roomCount);
+        
 
         // 클라이언트가 방(Room)에 조인하려고 할 때, 클라이언트 수를 확인하고 제한합니다.
         // if(roomMasterCounts[roomId] === undefined ){
@@ -61,7 +67,8 @@ io.on('connection', (socket) => {
     socket.on("join-slave", (roomId) => {
 
         socket.join(roomId);
-        console.log("slave User joined in a room : " + roomId);
+        const roomCount = io.sockets.adapter.rooms.get(roomId)?.size;
+        console.log(new Date() + " Slave joined in a room : " + roomId + " Count : " + roomCount);
 
         // if (roomSlaveCounts[roomId] === undefined) {
         //     roomSlaveCounts[roomId] = 1;
@@ -95,14 +102,13 @@ io.on('connection', (socket) => {
 
     socket.on("rtc-message", (data) => {
         var room = JSON.parse(data).roomId;
-        console.log(JSON.parse(data).event);
         socket.broadcast.to(room).emit('rtc-message', data);
     })
 
     socket.on("remote-event", (data) => {
         var room = JSON.parse(data).roomId;
-        console.log(JSON.parse(data).event);
         socket.broadcast.to(room).emit('remote-event', data);
     })
    
 })
+
