@@ -32,11 +32,15 @@ instrument(io, {
     mode: "development",
 });
 
-app.use('/admin-ui', express.static(__dirname + '/node_modules/@socket.io/admin-ui'));
+app.use('/css', express.static(__dirname + '/css'));
+app.use('/js', express.static(__dirname + '/js'));
+
 
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '/index.html'));
+    res.sendFile(path.join(__dirname, '/admin.html'));
 })
+
+
 
 
 const maxClientsPerMasterRoom = 2;
