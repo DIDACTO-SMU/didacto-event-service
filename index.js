@@ -1,9 +1,12 @@
 import express from "express";
 import { instrument } from "@socket.io/admin-ui"
 import { Server } from "socket.io"
-
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 const app = express();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 app.get('/view', (req, res) => {
     res.sendFile(__dirname + '/index.html');
@@ -56,8 +59,6 @@ io.on('connection', (socket) => {
         //     console.log("Master room full : " + roomId + " count : " + roomMasterCounts[roomId]);
         // }
 
-
-
         // 클라이언트가 방(Room)을 떠날 때 클라이언트 수를 업데이트합니다.
         socket.on('disconnect', () => {
             console.log("master disconnect, count:");
@@ -75,8 +76,7 @@ io.on('connection', (socket) => {
         //     socket.join(roomId);
         //     console.log("slave User joined in a room : " + roomId + " count:" + roomSlaveCounts[roomId]);
         // } 
-        
-        // // 클라이언트가 방(Room)에 조인하려고 할 때, 클라이언트 수를 확인하고 제한합니다.
+        // 클라이언트가 방(Room)에 조인하려고 할 때, 클라이언트 수를 확인하고 제한합니다.
         // else if (roomSlaveCounts[roomId] < maxClientsPerSlaveRoom) {
         //     roomSlaveCounts[roomId]++;
         //     socket.join(roomId);
@@ -88,9 +88,6 @@ io.on('connection', (socket) => {
         //     console.log("Slave room full : " + roomId + " count : " + roomSlaveCounts[roomId]);
         //     return;
         // }
-
-
-
         // 클라이언트가 방(Room)을 떠날 때 클라이언트 수를 업데이트합니다.
         socket.on('disconnect', () => {
             // roomSlaveCounts[roomId]--;
