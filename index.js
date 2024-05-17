@@ -3,20 +3,22 @@ import { instrument } from "@socket.io/admin-ui"
 import { Server } from "socket.io"
 import path from 'path';
 import { fileURLToPath } from 'url';
+import http from 'http';
 
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-app.get('/view', (req, res) => {
-    res.sendFile(__dirname + '/index.html');
-})
+
+
+
+
 
 
 var server_port = 5004;
-const server = app.listen(server_port, () => {
-    console.log("Started on : " + server_port);
-})
+
+const server = http.createServer(app);
+
 
 var io = new Server(server, {
     cors: {
@@ -24,9 +26,18 @@ var io = new Server(server, {
     }
 });
 
+
 instrument(io, {
     auth: false, // 실제 비밀번호를 쓰도록 바꿀 수 있음!
+    mode: "development",
 });
+
+app.use('/admin-ui', express.static(__dirname + '/node_modules/@socket.io/admin-ui'));
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '/index.html'));
+})
+
 
 const maxClientsPerMasterRoom = 2;
 const maxClientsPerSlaveRoom = 1;
@@ -107,5 +118,9 @@ io.on('connection', (socket) => {
         socket.broadcast.to(room).emit('remote-event', data);
     })
    
+})
+
+server.listen(server_port, () => {
+    console.log("Started on : " + server_port);
 })
 
