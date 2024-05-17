@@ -20,7 +20,8 @@ const server = app.listen(server_port, () => {
 
 var io = new Server(server, {
     cors: {
-      origin: "*"
+      origin: "*",
+      credentials: true
     }
 });
 
