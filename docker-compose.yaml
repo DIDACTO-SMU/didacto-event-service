@@ -1,8 +1,26 @@
 version: "3.7" 
+networks:
+  didacto-message-network:
+    driver: bridge
 services:
-  my-backend:
+  didacto-message-service:
     build:
       context: .
       dockerfile: Dockerfile
     ports:
       - 5004:5004
+    depends_on:
+      - didacto-message-redis
+    networks:
+      - didacto-message-network
+  didacto-message-redis:
+    image: redis:6.2.6-alpine
+    container_name: didacto-database-dev
+    command: redis-server /usr/local/etc/redis/redis.conf
+    ports:
+      - 6391:6379
+    volumes: 
+      - ./volumes/redis/data:/data
+      - ./volumes/redis/conf:/usr/local/etc/redis/redis.conf
+    networks:
+      - didacto-message-network
