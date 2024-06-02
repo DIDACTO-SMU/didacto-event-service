@@ -4,21 +4,45 @@ import { Server } from "socket.io"
 import path from 'path';
 import { fileURLToPath } from 'url';
 import http from 'http';
+import redis from 'redis'
+import { createAdapter } from "@socket.io/redis-adapter";
+import dotenv from 'dotenv';
 
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+dotenv.config();
 
-var server_port = 5004;
+var server_port = process.env.SERVER_PORT;
 
 const server = http.createServer(app);
 
+// Redis 클라이언트 생성
+const redisClient = redis.createClient({ 
+    url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`
+});
+
+const pub = redisClient.duplicate();
+const sub = redisClient.duplicate();
+
+
+pub.on('error', (err) => console.error('Redis Pub Client Error', err));
+sub.on('error', (err) => console.error('Redis Sub Client Error', err));
+
+
+await Promise.all([
+    pub.connect(),
+    sub.connect()
+])
+
 var io = new Server(server, {
+    adapter: createAdapter(pub, sub),
     cors: {
       origin: "*"
     }
 });
+
 
 instrument(io, {
     auth: false, // 실제 비밀번호를 쓰도록 바꿀 수 있음!
@@ -35,19 +59,15 @@ app.get('/', (req, res) => {
 
 
 
-
-const maxClientsPerMasterRoom = 2;
-const maxClientsPerSlaveRoom = 1;
-const roomMasterCounts = {}; // 방(Room)별 클라이언트 수를 추적하는 객체
-const roomSlaveCounts = {};
-
 io.on('connection', (socket) => {
-
     socket.on("join-master", (roomId) => {
 
         socket.join(roomId);
         const roomCount = io.sockets.adapter.rooms.get(roomId)?.size;
         console.log(new Date() + " Master joined in a room : " + roomId + " Count : " + roomCount);
+
+
+        console.log(roomCount);
         
         socket.on('disconnect', () => {
             console.log("master disconnect, count:");
@@ -55,13 +75,13 @@ io.on('connection', (socket) => {
     })
 
     socket.on("join-slave", (roomId) => {
-
         socket.join(roomId);
         const roomCount = io.sockets.adapter.rooms.get(roomId)?.size;
         console.log(new Date() + " Slave joined in a room : " + roomId + " Count : " + roomCount);
 
+        console.log(roomCount);
+        
         socket.on('disconnect', () => {
-            // roomSlaveCounts[roomId]--;
             console.log("slave disconnect");
         });
     })
@@ -84,4 +104,5 @@ io.on('connection', (socket) => {
 server.listen(server_port, () => {
     console.log("Started on : " + server_port);
 })
+
 
