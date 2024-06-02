@@ -1,13 +1,13 @@
-FROM node:18
+FROM node:21
 
-WORKDIR /rtc-server/
+WORKDIR /app/event-service/
 
-COPY ./package.json /rtc-server/
-COPY ./package-lock.json /rtc-server/
+COPY ./package.json /app/event-service/
+COPY ./package-lock.json /app/event-service/
 
-RUN yarn install
+RUN npm install
 
-COPY . /rtc-server/
+COPY . /app/event-service/
 
 # RUN  
 
