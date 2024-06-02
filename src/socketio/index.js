@@ -66,7 +66,10 @@ export const socketOnConnectionHandler = (socket) => {
         
 
         socket.on('disconnect', async () => {
-            await removeSocketUser(roomId, "master")
+            const exist = await selectSocketUser(roomId, "master");
+            if(exist && socket.id == exist){
+                await removeSocketUser(roomId, "master")
+            }
         });
     })
 
@@ -116,7 +119,10 @@ export const socketOnConnectionHandler = (socket) => {
 
 
         socket.on('disconnect', async () => {
-            await removeSocketUser(roomId, "slave")
+            const exist = await selectSocketUser(roomId, "slave");
+            if(exist && socket.id == exist){
+                await removeSocketUser(roomId, "slave")
+            }
             await socket.broadcast.to(roomId).emit(SocketEventType.SLAVE_DISCONN, JSON.stringify({
                 message: "학생의 연결이 끊겼습니다."
             }));

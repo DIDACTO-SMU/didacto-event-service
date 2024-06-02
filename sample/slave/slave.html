@@ -81,7 +81,8 @@
         var room = getQueryParameter('id');
 
         // 시그널링 서버 -> 만든 Socket.io 서버 사용
-        socket = io.connect('http://localhost:5004'); 
+        socket = io.connect('http://3.39.22.211:5004'); 
+        // socket = io.connect('http://localhost:5004'); 
         
         // 연결되었을 때 룸에 조인
         socket.on('connect', () => {
