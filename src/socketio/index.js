@@ -11,45 +11,61 @@ export const socketOnConnectionHandler = (socket) => {
         // 현재 소켓과 ID가 다른 이미 Room에 접속중인 소켓이 있으면
         if(existUserSocketId && existUserSocketId != socket.id){
             // 접속중인 클라이언트 소켓에 알려준다.
-            await io.to(existUserSocketId).emit('kick', {
+            await io.to(existUserSocketId).emit('kick', JSON.stringify({
                 message: "다른 연결이 감지되었습니다. 연결을 해제합니다."
-            }); 
+            })); 
 
             let existSocket = await io.in(existUserSocketId).fetchSockets(); 
-            if(existSocket){
+            if(existSocket && existSocket[0]){
                 await existSocket[0].leave(roomId); // Room에서 강퇴시킨다.
             }
             
             await removeSocketUser(roomId, "master"); // Redis에서 삭제
 
-            await socket.join(roomId);
-            await socket.emit("server-msg", {
+            // await socket.join(roomId);
+            await socket.emit("server-msg", JSON.stringify({
                 message: "이미 접속중인 다른 연결을 해제하고 접속합니다."
-            })
+            }))
         }
         else{
-            await socket.join(roomId);
+            // await socket.join(roomId);
         }
+        
+
+        // 학생이 연결 상태인지 확인 (학생 선접속)
+        const existSlaveSocketId = await selectSocketUser(roomId, "slave");
+        if(!existSlaveSocketId){
+            await socket.emit("slave-disconnect", JSON.stringify({
+                message: "해당 학생이 연결되지 않은 상태입니다. 연결을 종료합니다."
+            }))
+            await socket.leave(roomId);
+            await removeSocketUser(roomId, "master")
+            return;
+        }
+
+
 
         if(!existUserSocketId || existUserSocketId != socket.id){
             const result = await saveSocketUser(roomId, "master", socket.id); // Redis에 저장
-
             //저장 실패 시
             if(!result){ 
-                await socket.emit("server-msg", {
+                await socket.emit("server-msg", JSON.stringify({
                     message: "서버에 문제가 발생했습니다. 연결을 종료합니다."
-                })
-                await socket.disconnect();
+                }))
+                await socket.leave(roomId);
+                await removeSocketUser(roomId, "master")
+            }
+            else{
+                await socket.join(roomId)
+                await socket.emit("server-msg", JSON.stringify({
+                    message: `Room ${roomId} 접속 완료`
+                }))
             }
         }
         
 
-
         socket.on('disconnect', async () => {
-            const existUserSocketId = await selectSocketUser(roomId, "master");
-            if(existUserSocketId && existUserSocketId == socket.id){
-                await removeSocketUser(roomId, "master");
-            }
+            await removeSocketUser(roomId, "master")
         });
     })
 
@@ -60,44 +76,49 @@ export const socketOnConnectionHandler = (socket) => {
 
         // 현재 소켓과 ID가 다른 이미 Room에 접속중인 소켓이 있으면
         if(existUserSocketId && existUserSocketId != socket.id){
-            await io.to(existUserSocketId).emit('kick', {
+            await io.to(existUserSocketId).emit('kick', JSON.stringify({
                 message: "다른 연결이 감지되었습니다. 연결을 해제합니다."
-            });  // 접속중인 클라이언트 소켓에 알려준다.
+            }));  // 접속중인 클라이언트 소켓에 알려준다.
 
             let existSocket = await io.in(existUserSocketId).fetchSockets(); 
-            if(existSocket){
+            if(existSocket && existSocket[0]){
                 await existSocket[0].leave(roomId); // Room에서 강퇴시킨다.
             }
 
             await removeSocketUser(roomId, "slave"); // Redis에서 삭제
 
-            await socket.join(roomId);
-            await socket.emit("server-msg", {
+            // await socket.join(roomId);
+            await socket.emit("server-msg", JSON.stringify({
                 message: "이미 접속중인 다른 연결을 해제하고 접속합니다."
-            })
+            }))
         }
         else{
-            await socket.join(roomId);
+            // await socket.join(roomId);
         }
+        await socket.emit("server-msg", JSON.stringify({
+            message: `Room ${roomId} 접속 완료`
+        }))
 
         if(!existUserSocketId || existUserSocketId != socket.id){
             const result = await saveSocketUser(roomId, "slave", socket.id); // Redis에 저장
+            await socket.join(roomId);
 
             //저장 실패 시
             if(!result){ 
-                await socket.emit("server-msg", {
+                await socket.emit("server-msg", JSON.stringify({
                     message: "서버에 문제가 발생했습니다. 연결을 종료합니다."
-                })
-                await socket.disconnect();
+                }))
+                await socket.leave(roomId);
+                await removeSocketUser(roomId, "slave")
             }
         }
 
 
         socket.on('disconnect', async () => {
-            const existUserSocketId = await selectSocketUser(roomId, "slave");
-            if(existUserSocketId && existUserSocketId == socket.id){
-                await removeSocketUser(roomId, "slave");
-            }
+            await removeSocketUser(roomId, "slave")
+            await socket.broadcast.to(roomId).emit("slave-disconnect", JSON.stringify({
+                message: "학생의 연결이 끊겼습니다."
+            }));
         });
     })
 
@@ -111,5 +132,7 @@ export const socketOnConnectionHandler = (socket) => {
         var room = JSON.parse(data).roomId;
         socket.broadcast.to(room).emit('remote-event', data);
     })
+
+
    
 }
