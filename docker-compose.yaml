@@ -9,6 +9,9 @@ services:
       dockerfile: Dockerfile
     ports:
       - 5004:5004
+    environment:
+      - REDIS_HOST=didacto-event-redis
+      - REDIS_PORT=6379
     depends_on:
       - didacto-event-redis
     networks:
