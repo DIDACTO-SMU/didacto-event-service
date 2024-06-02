@@ -1,21 +1,21 @@
 version: "3.7" 
 networks:
-  didacto-message-network:
+  didacto-event-network:
     driver: bridge
 services:
-  didacto-message-service:
+  didacto-event-service:
     build:
       context: .
       dockerfile: Dockerfile
     ports:
       - 5004:5004
     depends_on:
-      - didacto-message-redis
+      - didacto-event-redis
     networks:
-      - didacto-message-network
-  didacto-message-redis:
+      - didacto-event-network
+  didacto-event-redis:
     image: redis:7.0.15-alpine
-    container_name: didacto-database-dev
+    container_name: didacto-event-redis
     command: redis-server /usr/local/etc/redis/redis.conf
     ports:
       - 6391:6379
@@ -23,4 +23,4 @@ services:
       - ./volumes/redis/data:/data
       - ./volumes/redis/conf:/usr/local/etc/redis/redis.conf
     networks:
-      - didacto-message-network
+      - didacto-event-network
