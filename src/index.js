@@ -4,9 +4,11 @@ import { Server } from "socket.io"
 import path from 'path';
 import { fileURLToPath } from 'url';
 import http from 'http';
-import redis from 'redis'
 import { createAdapter } from "@socket.io/redis-adapter";
 import dotenv from 'dotenv';
+import {redisInit, pub, sub} from "./redis/redisClient.js";
+import { socketOnConnectionHandler } from "./socketio/index.js";
+
 
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
@@ -16,27 +18,12 @@ dotenv.config();
 
 var server_port = process.env.SERVER_PORT;
 
+await redisInit();
+
 const server = http.createServer(app);
 
-// Redis 클라이언트 생성
-const redisClient = redis.createClient({ 
-    url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`
-});
 
-const pub = redisClient.duplicate();
-const sub = redisClient.duplicate();
-
-
-pub.on('error', (err) => console.error('Redis Pub Client Error', err));
-sub.on('error', (err) => console.error('Redis Sub Client Error', err));
-
-
-await Promise.all([
-    pub.connect(),
-    sub.connect()
-])
-
-var io = new Server(server, {
+export let io = new Server(server, {
     adapter: createAdapter(pub, sub),
     cors: {
       origin: "*"
@@ -49,6 +36,8 @@ instrument(io, {
     mode: "development",
 });
 
+io.on('connection', socketOnConnectionHandler)
+
 app.use('/admin', express.static(__dirname + '/admin'));
 // app.use('/js', express.static(__dirname + '/js'));
 
@@ -58,51 +47,6 @@ app.get('/', (req, res) => {
 })
 
 
-
-io.on('connection', (socket) => {
-    socket.on("join-master", (roomId) => {
-
-        socket.join(roomId);
-        const roomCount = io.sockets.adapter.rooms.get(roomId)?.size;
-        console.log(new Date() + " Master joined in a room : " + roomId + " Count : " + roomCount);
-
-
-        console.log(roomCount);
-        
-        socket.on('disconnect', () => {
-            console.log("master disconnect, count:");
-        });
-    })
-
-    socket.on("join-slave", (roomId) => {
-        socket.join(roomId);
-        const roomCount = io.sockets.adapter.rooms.get(roomId)?.size;
-        console.log(new Date() + " Slave joined in a room : " + roomId + " Count : " + roomCount);
-
-        console.log(roomCount);
-        
-        socket.on('disconnect', () => {
-            console.log("slave disconnect");
-        });
-    })
-
-
-
-    
-    socket.on("rtc-message", (data) => {
-        var room = JSON.parse(data).roomId;
-        socket.broadcast.to(room).emit('rtc-message', data);
-    })
-
-    socket.on("remote-event", (data) => {
-        var room = JSON.parse(data).roomId;
-        socket.broadcast.to(room).emit('remote-event', data);
-    })
-   
-})
-
 server.listen(server_port, () => {
     console.log("Started on : " + server_port);
 })
-
-

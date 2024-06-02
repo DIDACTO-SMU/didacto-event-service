@@ -1,54 +1,36 @@
 import redis from 'redis'
+import dotenv from 'dotenv';
 
-const redisClient = redis.createClient({
-  socket: {
-    port: 6391,
-    host: "localhost"
-  }
+dotenv.config();
+
+// Redis 클라이언트 생성
+const redisClient = redis.createClient({ 
+  url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`
 });
 
-redisClient.on('connect', () => {
-  console.log('Connected to Redis');
-  redisInit();
-});
-
-redisClient.on('error', (err) => {
-  console.error('Redis error: ', err);
-});
+export const pub = redisClient.duplicate();
+export const sub = redisClient.duplicate();
 
 
-
-export const setKey = (key, value) => {
-    return new Promise((resolve, reject) => {
-        redisClient.set(key, value, (err, reply) => {
-          if (err) {
-            return reject(err);
-          }
-          resolve(reply);
-        });
-      });
-}
-
-
-export const getKey = (key) => {
-    return new Promise((resolve, reject) => {
-        redisClient.get(key, (err, reply) => {
-          if (err) {
-            return reject(err);
-          }
-          resolve(reply);
-        });
-      });
-}
-
-export const deleteKey = async (key, value) => {
-  await redisClient.del(key);
-}
-
-// Redis 내부를 모두 초기화하는 함수
 export const redisInit = async () => {
-    redisClient.flushAll();
-};
+  pub.on('error', (err) => console.error('Redis Pub Client Error', err));
+  sub.on('error', (err) => console.error('Redis Sub Client Error', err));
+  
+  
+  await Promise.all([
+      redisClient.connect(),
+      pub.connect(),
+      sub.connect()
+  ])
+  
+  redisClient.flushAll();
+}
+
+
+
+
+
+
 
 
 export default redisClient;
