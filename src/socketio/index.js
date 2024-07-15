@@ -106,6 +106,7 @@ export const socketOnConnectionHandler = (socket) => {
         if(!existUserSocketId || existUserSocketId != socket.id){
             const result = await saveSocketUser(roomId, "slave", socket.id); // Redis에 저장
             await socket.join(roomId);
+            console.log("join");
 
             //저장 실패 시
             if(!result){ 

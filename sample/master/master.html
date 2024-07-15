@@ -84,7 +84,7 @@
 
         // 시그널링 서버 -> 만든 Socket.io 서버 사용
         socket = io.connect('http://3.39.22.211:5004'); 
-        // socket = io.connect('http://localhost:5004'); 
+        // socket = io.connect('http://localhost:5005'); 
         
         // 연결되었을 때 룸에 조인
         socket.on('connect', () => {
@@ -124,6 +124,7 @@
             }
             socket.emit("rtc-message", JSON.stringify(data));
         }
+
         // 연결이 도중에 끊어졌을 경우 (재접속 안함)
         socket.on('disconnect', () => {
             location.href ="error/disconnect.html";
