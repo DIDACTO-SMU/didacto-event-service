@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Connection</title>
+</head>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f2f2f2;
+    }
+
+    .box {
+        width: 80px;
+        height: 80px;
+        margin : 20px;
+        background-color: #ff6a00;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2em;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: background-color 0.3s, transform 0.3s;
+    }
+    .container {
+        max-width: 800px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    h1 {
+        text-align: center;
+        color: #333;
+    }
+    
+    #chat-box {
+        border: 1px solid #ccc;
+        padding: 10px;
+        overflow-y: auto;
+        max-height: 300px;
+    }
+    
+    .chat-message {
+        margin-bottom: 10px;
+    }
+    
+    .chat-message p {
+        margin: 5px 0;
+        padding: 5px 10px;
+        background-color: #f9f9f9;
+        border-radius: 5px;
+        word-wrap: break-word;
+    }
+</style>
+<body>
+    <div class="container">
+        <h1>Master 접속 완료</h1><br>
+        <input id="messageText">
+        <button onclick="pass();">전송</button><br>
+        <div class="box" onclick="location.href='index.html'">접속 종료</div>
+        <div id="chat-box">
+            
+        </div>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.1/socket.io.js" crossorigin="anonymous"></script>
+    <script>
+
+        function getQueryParameter(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        var socket;
+        var room = getQueryParameter('id');
+
+        // 시그널링 서버 -> 만든 Socket.io 서버 사용
+        socket = io.connect('http://3.39.22.211:5004'); 
+        // socket = io.connect('http://localhost:5005'); 
+        
+        // 연결되었을 때 룸에 조인
+        socket.on('connect', () => {
+            socket.emit("join-master", room); 
+        });
+
+        // Room Join -> 이미 접속한 Master 존재
+        socket.on('server-msg', async (message) => {
+            console.log(message)
+            var content = JSON.parse(message);
+            var messageParagraph = document.createElement('p');
+            messageParagraph.textContent = content.message;
+            document.getElementById("chat-box").appendChild(messageParagraph);
+        })
+
+        // 다른 연결이 감지되어 연결이 강제종료되는 경우
+        socket.on('kick', async (data) => {
+            location.href ="error/exit.html";
+        })
+
+        // 학생의 연결이 끊긴 경우
+        socket.on('slave-disconnect', async (data) => {
+            location.href ="error/slave-disconnect.html";
+        })
+
+        // 상호작용
+        async function pass(){
+            var message = document.getElementById("messageText").value;
+            send({data: message});
+        }
+
+        async function send(message) {
+            console.log("emit");
+            const data = {
+                roomId: room,
+                ...message
+            }
+            socket.emit("rtc-message", JSON.stringify(data));
+        }
+
+        // 연결이 도중에 끊어졌을 경우 (재접속 안함)
+        socket.on('disconnect', () => {
+            location.href ="error/disconnect.html";
+        });
+
+        // 시작부터 연결이 안될 경우
+        socket.on('connect_error', function() {
+            window.location.href = "error/connection_fail.html";
+        });
+
+    </script>
+</body>
+</html>
